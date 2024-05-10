@@ -768,7 +768,7 @@ class NMF:
 
         return merged_act
 
-    def explore(self, input_sequence: int = 0, **kwargs):
+    def explore(self, input_sequence: int = 0, filter_token: bool = False, top_k: int = -1, **kwargs):
         """
         Show interactive explorable for a single sequence with sparklines to isolate factors.
 
@@ -803,6 +803,29 @@ class NMF:
         else:
             # Case: no generation
             factors = [comp.tolist() for comp in self.components]  # the json conversion needs this
+            
+#         import nltk
+#         from nltk.corpus import stopwords
+        import string
+        
+#         sw = set(stopwords.words('english'))
+        
+        if filter_token:
+            tmp = []
+            for f in factors:
+                idx = np.argmax(f[:self.n_input_tokens])
+                if self.tokens[input_sequence][idx] in string.punctuation or self.tokens[input_sequence][idx] == '<|startoftext|>' or self.tokens[input_sequence][idx] == '<|endoftext|>':
+                    pass
+                else:
+                    top_k = min(top_k, len(f))
+                    if top_k == -1:
+                        tmp.append(f)
+                    else:
+                        tmp_f = [0] * len(f)
+                        for ind in np.argsort(f)[::-1][:top_k]:
+                            tmp_f[ind] = f[ind]
+                        tmp.append(tmp_f)
+            factors = tmp
 
         data = {
             # A list of dicts. Each in the shape {
